@@ -1,0 +1,39 @@
+name: Rodar Robô RAS Presente
+
+on:
+  # Dias 5 e 20 às 11:57 BRT (14:57 UTC)
+  schedule:
+    - cron: "57 14 5,20 * *"
+  # Permite rodar manualmente pela UI do GitHub
+  workflow_dispatch:
+    inputs:
+      forcar_execucao:
+        description: "Forçar execução (ignora checagem de dia)"
+        required: false
+        default: "false"
+
+jobs:
+  rodar:
+    name: Iniciar robô no Fly.io
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Instalar flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Iniciar máquina robo-pc
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          if [ "${{ github.event.inputs.forcar_execucao }}" = "true" ]; then
+            fly secrets set FORCAR_EXECUCAO=true --app robo-pc
+          fi
+          fly machine start e827947b645e28 --app robo-pc
+
+      - name: Aguardar conclusão e exibir logs
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          echo "Aguardando robô finalizar..."
+          sleep 30
+          fly logs -a robo-pc --no-tail 2>&1 | tail -50
