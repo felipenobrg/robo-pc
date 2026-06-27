@@ -1,9 +1,9 @@
 name: Rodar Robô RAS Presente
 
 on:
-  # Dias 5 e 20 às 11:57 BRT (14:57 UTC)
+  # Dias 5 e 20 às 07:57 BRT (10:57 UTC)
   schedule:
-    - cron: "57 14 5,20 * *"
+    - cron: "57 10 5,20 * *"
   # Permite rodar manualmente pela UI do GitHub
   workflow_dispatch:
     inputs:
