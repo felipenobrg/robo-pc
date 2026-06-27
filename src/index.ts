@@ -184,7 +184,7 @@ async function runAutomation() {
       Object.defineProperty(navigator, "languages", { get: () => ["pt-BR", "pt"] });
     });
 
-    await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+    await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => undefined);
     await loginToRasweb(page, raswebUsername, raswebPassword);
     await log("info", "Login RASWEB executado.");
 
