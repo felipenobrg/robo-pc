@@ -123,11 +123,6 @@ async function runAutomation() {
   await log("info", "Automation Worker iniciado");
   await log("info", `Logs desta execução: ${runDir}`);
 
-  // Loga o IP público para confirmar geolocalização (útil para verificar VPN/Railway)
-  try {
-    const geo = await fetch("http://ip-api.com/json").then(r => r.json()) as Record<string, string>;
-    await log("info", `IP de origem: ${geo.query} — ${geo.city}, ${geo.regionName}, ${geo.country} (${geo.isp})`);
-  } catch { /* ignora se offline */ }
 
   if (!raswebUsername || !raswebPassword) {
     await log("warn", "Credenciais RASWEB nao configuradas");
@@ -156,8 +151,6 @@ async function runAutomation() {
   const proxyUrl = process.env.PROXY_URL;
   if (proxyUrl) {
     await log("info", `Proxy configurado: ${proxyUrl.replace(/:([^:@]+)@/, ":***@")}`);
-  } else {
-    await log("warn", "Nenhum proxy configurado — IP de origem será o da máquina local.");
   }
   const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
   const browser = await chromium.launch({
