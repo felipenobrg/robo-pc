@@ -4,6 +4,11 @@ import fs from "fs";
 dotenv.config();
 dotenv.config({ path: path.resolve(__dirname, "../../../.env"), override: false });
 
+import * as Sentry from "@sentry/node";
+if (process.env.SENTRY_DSN) {
+  Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
+}
+
 import { chromium } from "playwright";
 import { log, screenshot, salvarDebug, logFilePath, aleatorio } from "./utils";
 import {
@@ -147,6 +152,8 @@ async function runAutomation() {
     const stack   = error instanceof Error ? (error.stack ?? "") : "";
     await log("error", `EXCEÇÃO: ${message}`);
     if (stack) { try { fs.appendFileSync(logFilePath, stack + "\n", "utf8"); } catch { /* */ } }
+    Sentry.captureException(error, { extra: { message, ip: "152.233.19.4 (GRU)" } });
+    await Sentry.flush(3000).catch(() => undefined);
     if (page) {
       await screenshot(page, "erro-inesperado").catch(() => undefined);
       try {
