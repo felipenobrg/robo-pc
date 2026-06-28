@@ -68,9 +68,10 @@ async function runAutomation() {
   });
 
   let page: import("playwright").Page | undefined;
+  let context: import("playwright").BrowserContext | undefined;
   try {
     const userAgent = USER_AGENTS[aleatorio(0, USER_AGENTS.length - 1)];
-    const context   = await browser.newContext({
+    context = await browser.newContext({
       userAgent,
       locale: "pt-BR",
       viewport: { width: 1366, height: 768 },
@@ -81,6 +82,8 @@ async function runAutomation() {
       },
     });
     page = await context.newPage();
+
+    await context.tracing.start({ screenshots: true, snapshots: true, sources: false });
 
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "webdriver", { get: () => undefined });
@@ -135,6 +138,8 @@ async function runAutomation() {
       await selecionarEReservarTodosOsDias(page, session);
     }
 
+    await context.tracing.stop({ path: "/app/trace.zip" });
+    await log("info", "Trace salvo em /app/trace.zip");
     await browser.close();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -151,6 +156,7 @@ async function runAutomation() {
       } catch { /* */ }
       await aguardarIntervencaoManual(page, `Erro inesperado: ${message}`);
     }
+    if (context) await context.tracing.stop({ path: "/app/trace.zip" }).catch(() => undefined);
     await browser.close();
     process.exitCode = 1;
   }
