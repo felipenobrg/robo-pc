@@ -84,12 +84,15 @@ function salvarBaseline(b: Record<string, unknown>) { fs.writeFileSync(baselineF
 
 // ─── NTFY ─────────────────────────────────────────────────────────────────────
 async function enviarNtfy(totalCritico: number, totalAlerta: number): Promise<void> {
-  const statusFinal = totalCritico > 0 ? "CRÍTICO" : totalAlerta > 0 ? "ALERTA" : "APROVADO";
+  const statusFinal = totalCritico > 0 ? "CRITICO" : totalAlerta > 0 ? "ALERTA" : "APROVADO";
   const prioridade  = totalCritico > 0 ? "urgent" : totalAlerta > 0 ? "high" : "default";
-  const emoji       = totalCritico > 0 ? "🔴" : totalAlerta > 0 ? "🟡" : "🟢";
-  const titulo      = `${emoji} Verify RASWEB — ${statusFinal} (${tagData})`;
+  const prefixo     = totalCritico > 0 ? "[CRITICO]" : totalAlerta > 0 ? "[ALERTA]" : "[OK]";
+  const titulo      = `${prefixo} Verify RASWEB ${tagData}`;
+  const tags        = totalCritico > 0 ? "rotating_light" : totalAlerta > 0 ? "warning" : "white_check_mark";
 
-  const corpo = linhas.join("\n").slice(0, 4000);
+  // Corpo: linha de resumo + relatório completo (sem emoji para garantir encoding)
+  const resumo = `${statusFinal} — Criticos: ${totalCritico} | Alertas: ${totalAlerta}\n\n`;
+  const corpo  = (resumo + linhas.join("\n")).slice(0, 4000);
 
   try {
     const res = await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
@@ -97,15 +100,15 @@ async function enviarNtfy(totalCritico: number, totalAlerta: number): Promise<vo
       headers: {
         "Title":    titulo,
         "Priority": prioridade,
-        "Tags":     totalCritico > 0 ? "rotating_light" : totalAlerta > 0 ? "warning" : "white_check_mark",
+        "Tags":     tags,
         "Content-Type": "text/plain; charset=utf-8",
       },
-      body: corpo,
+      body: Buffer.from(corpo, "utf-8"),
     });
-    if (res.ok) console.log(`[ntfy] Relatório enviado → ntfy.sh/${NTFY_TOPIC}`);
+    if (res.ok) console.log(`[ntfy] Relatorio enviado -> ntfy.sh/${NTFY_TOPIC}`);
     else        console.warn(`[ntfy] Falha HTTP ${res.status}`);
   } catch (e) {
-    console.warn(`[ntfy] Exceção: ${(e as Error).message}`);
+    console.warn(`[ntfy] Excecao: ${(e as Error).message}`);
   }
 }
 

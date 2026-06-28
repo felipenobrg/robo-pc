@@ -30,3 +30,7 @@ primary_region = "gru"
   cpus = 1
   kill_timeout = "45s"
   processes = ["app", "verify"]
+
+[restart]
+  policy = "no"
+  processes = ["verify"]
