@@ -151,8 +151,19 @@ async function clickVirtualPassword(page: Page, frame: Page | Frame, pwd: string
   }
 }
 
+async function logIP(): Promise<void> {
+  try {
+    const geo = await fetch("http://ip-api.com/json", { signal: AbortSignal.timeout(5000) })
+      .then(r => r.json()) as Record<string, string>;
+    log(`[IP] ${geo.query ?? "?"} — ${geo.city ?? "?"}, ${geo.country ?? "?"} (${geo.isp ?? "?"})`);
+  } catch {
+    log("[IP] Verificacao de IP indisponivel");
+  }
+}
+
 async function fazerLogin(page: Page) {
   try {
+    await logIP();
     await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
     const loginFrame  = await resolveLoginFrame(page);
     await loginFrame.locator("#txtusuario").waitFor({ state: "visible", timeout: 15000 });
