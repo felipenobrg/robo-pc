@@ -266,7 +266,16 @@ export async function carregarCalendarioPresente(page: Page, session: NativeHttp
       if (btn) btn.click();
     }).catch(() => undefined);
 
-    await page.waitForTimeout(2500).catch(() => undefined);
+    // Aguarda UpdatePanel terminar (gif_load sumir) em vez de flat 2500ms
+    await page.waitForTimeout(300).catch(() => undefined);
+    await frame.waitForFunction(
+      () => {
+        const gif = document.querySelector('[id$="gif_load"]') as HTMLElement | null;
+        if (!gif) return true;
+        return gif.style.display === "none" || gif.offsetParent === null;
+      },
+      { timeout: 6000 }
+    ).catch(() => undefined);
 
     const frameApos = await aguardarFrameCentral(page);
     const hddias    = await frameApos.evaluate(() => {
