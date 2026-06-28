@@ -16,6 +16,7 @@ export async function aguardarFrameCentral(page: Page): Promise<Page | Frame> {
 }
 
 export async function resolveLoginFrame(page: Page): Promise<Page | Frame> {
+  await log("info", "Aguardando tela de login (frame central)...");
   const directLogin = page.locator("#txtusuario");
   if ((await directLogin.count()) > 0) return page;
 
@@ -57,9 +58,11 @@ export async function loginToRasweb(page: Page, username: string, password: stri
   const loginFrame = await resolveLoginFrame(page);
 
   await loginFrame.locator("#txtusuario").waitFor({ state: "visible", timeout: 20000 });
+  await log("info", `Preenchendo usuário: ${username}`);
   await loginFrame.locator("#txtusuario").fill(username);
   await clickVirtualPassword(page, loginFrame, password);
   await loginFrame.locator("#entrar").click().catch(() => undefined);
+  await log("info", "Clicando Entrar — aguardando navegação...");
 
   let sessaoDuplicadaTratada = false;
   for (let i = 0; i < 600; i++) {  // 300s (600 × 500ms)

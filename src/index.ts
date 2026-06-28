@@ -73,6 +73,8 @@ async function runAutomation() {
     const context   = await browser.newContext({
       userAgent,
       locale: "pt-BR",
+      viewport: { width: 1366, height: 768 },
+      timezoneId: "America/Sao_Paulo",
       extraHTTPHeaders: {
         "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -83,8 +85,9 @@ async function runAutomation() {
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "webdriver", { get: () => undefined });
       (window as unknown as Record<string, unknown>).chrome = { runtime: {} };
-      Object.defineProperty(navigator, "plugins", { get: () => [1, 2, 3] });
       Object.defineProperty(navigator, "languages", { get: () => ["pt-BR", "pt"] });
+      Object.defineProperty(navigator, "hardwareConcurrency", { get: () => 8 });
+      Object.defineProperty(navigator, "platform", { get: () => "Win32" });
     });
 
     process.once("SIGINT", async () => {
@@ -94,7 +97,9 @@ async function runAutomation() {
       process.exit(0);
     });
 
+    await log("info", "Carregando RASWEB...");
     await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => undefined);
+    await log("info", "RASWEB carregado — iniciando login...");
     const frameLogin = await loginToRasweb(page, raswebUsername, raswebPassword);
     await log("info", `Login OK — frame: ${frameLogin.url()}`);
     await screenshot(page, "01-pos-login");

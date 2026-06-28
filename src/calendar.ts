@@ -228,9 +228,13 @@ export async function carregarCalendarioPresente(page: Page, session: NativeHttp
 
       if (opts.length === 0) {
         if (tentativa % 60 === 0) {
-        const decorrido = Math.round((Date.now() - inicio) / 1000);
-        await log("info", `Tentativa #${tentativa} (~${decorrido}s) — dropdown ainda vazio.`);
-      }
+          const decorrido = Math.round((Date.now() - inicio) / 1000);
+          await log("info", `Tentativa #${tentativa} (~${decorrido}s) — dropdown ainda vazio.`);
+        }
+        if (tentativa % 600 === 0 && tentativa > 0) {
+          await session.updateCookies(page);
+          await log("info", `Keep-alive: cookies renovados na tentativa #${tentativa}`);
+        }
         await new Promise(r => setTimeout(r, POLLING_TURBO_MS));
         continue;
       }

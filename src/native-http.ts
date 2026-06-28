@@ -15,7 +15,8 @@ export class NativeHttpSession {
     const c = await page.context().cookies();
     this.cookies = c.map(ck => `${ck.name}=${ck.value}`).join("; ");
     this.pageUrl  = page.url();
-    await log("info", `Cookies atualizados: ${c.length} cookies capturados`);
+    const nomes = c.map(ck => ck.name).join(", ");
+    await log("info", `Cookies atualizados (${c.length}): ${nomes}`);
   }
 
   async callAsmx(params: AsmxParams): Promise<{ datas: string; status: number }> {
