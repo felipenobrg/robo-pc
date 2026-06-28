@@ -27,20 +27,13 @@ export async function resolveLoginFrame(page: Page): Promise<Page | Frame> {
   const iframe = page.locator("iframe[name='central']");
   if ((await iframe.count()) > 0) {
     await iframe.waitFor({ state: "attached", timeout: 20000 });
-    // Aguarda o frame carregar o conteúdo (contentFrame pode ser null logo após attached)
-    for (let t = 0; t < 20; t++) {
-      const element = await iframe.elementHandle();
-      const frame   = await element?.contentFrame();
-      if (frame && frame.url() && frame.url() !== "about:blank") return frame;
-      await page.waitForTimeout(500).catch(() => undefined);
-    }
+    const element = await iframe.elementHandle();
+    const frame   = await element?.contentFrame();
+    if (frame) return frame;
   }
 
-  // Fallback: navegar diretamente para p_login.aspx e aguardar #txtusuario
   await page.goto(new URL("p_login.aspx", raswebUrl).toString(), { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForTimeout(2000).catch(() => undefined);
   if ((await page.locator("#txtusuario").count()) > 0) return page;
-  // Tenta aguardar aparecer no frame central após goto
   const centralApos = page.frame({ name: "central" }) ?? page.frames().find(f => f.url().includes("p_login"));
   if (centralApos) return centralApos;
   throw new Error("Tela de login do RASWEB nao foi carregada");
@@ -69,17 +62,15 @@ export async function loginToRasweb(page: Page, username: string, password: stri
   // Aguarda o form de login ou detecta sessão duplicada antes de tentar preencher
   let loginFormReady = false;
   for (let t = 0; t < 60; t++) {  // até 30s
-    const temLogin = await loginFrame.evaluate(() => !!document.getElementById("txtusuario")).catch(() => false);
+    const temLogin = await loginFrame.locator("#txtusuario").count().then(c => c > 0).catch(() => false);
     if (temLogin) { loginFormReady = true; break; }
 
     const centralNow = page.frame({ name: "central" }) ?? loginFrame;
     const texto = await centralNow.evaluate(() => document.body?.innerText ?? "").catch(() => "");
     const tl    = texto.toLowerCase();
-    // Log periódico para diagnóstico
     if (t % 10 === 9) {
       const fUrl = loginFrame.url?.() ?? "?";
-      const fTxt = await loginFrame.evaluate(() => (document.body?.innerText ?? "").slice(0, 300)).catch(() => "?");
-      await log("info", `[login-wait ${t}s] frame=${fUrl} | ${fTxt}`);
+      await log("info", `[login-wait ${t * 500}ms] frame=${fUrl} | ${texto.slice(0, 200)}`);
     }
 
     if (tl.includes("outra conex") || tl.includes("outra maquina") || tl.includes("acesso negado")) {
