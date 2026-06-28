@@ -27,13 +27,22 @@ export async function resolveLoginFrame(page: Page): Promise<Page | Frame> {
   const iframe = page.locator("iframe[name='central']");
   if ((await iframe.count()) > 0) {
     await iframe.waitFor({ state: "attached", timeout: 20000 });
-    const element = await iframe.elementHandle();
-    const frame = await element?.contentFrame();
-    if (frame) return frame;
+    // Aguarda o frame carregar o conteúdo (contentFrame pode ser null logo após attached)
+    for (let t = 0; t < 20; t++) {
+      const element = await iframe.elementHandle();
+      const frame   = await element?.contentFrame();
+      if (frame && frame.url() && frame.url() !== "about:blank") return frame;
+      await page.waitForTimeout(500).catch(() => undefined);
+    }
   }
 
+  // Fallback: navegar diretamente para p_login.aspx e aguardar #txtusuario
   await page.goto(new URL("p_login.aspx", raswebUrl).toString(), { waitUntil: "domcontentloaded", timeout: 30000 });
+  await page.waitForTimeout(2000).catch(() => undefined);
   if ((await page.locator("#txtusuario").count()) > 0) return page;
+  // Tenta aguardar aparecer no frame central após goto
+  const centralApos = page.frame({ name: "central" }) ?? page.frames().find(f => f.url().includes("p_login"));
+  if (centralApos) return centralApos;
   throw new Error("Tela de login do RASWEB nao foi carregada");
 }
 
