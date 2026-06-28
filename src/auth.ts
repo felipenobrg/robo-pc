@@ -117,6 +117,11 @@ export async function loginToRasweb(page: Page, username: string, password: stri
           await central.evaluate(() => {
             (window as unknown as { __doPostBack: (t: string, a: string) => void }).__doPostBack("entrar2", "");
           }).catch(() => undefined);
+          await page.waitForLoadState("domcontentloaded", { timeout: 10000 }).catch(() => undefined);
+          await page.waitForTimeout(1500);
+          await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 20000 }).catch(() => undefined);
+          await page.waitForTimeout(1000);
+          await log("info", "Sessão anterior encerrada — frameset recarregado.");
           continue;
         }
       }
