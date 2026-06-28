@@ -1,5 +1,5 @@
 import type { Page } from "playwright";
-import { log, salvarDebug } from "./utils";
+import { log, salvarDebug, aleatorio } from "./utils";
 import { raswebUrl, USER_AGENTS, DELEGACIA_PREFERIDAS, DELEGACIA_MAX } from "./config";
 import { aguardarFrameCentral } from "./auth";
 import type { CachedFormState, AsmxParams } from "./types";
@@ -15,6 +15,7 @@ export class NativeHttpSession {
     const c = await page.context().cookies();
     this.cookies = c.map(ck => `${ck.name}=${ck.value}`).join("; ");
     this.pageUrl  = page.url();
+    await log("info", `Cookies atualizados: ${c.length} cookies capturados`);
   }
 
   async callAsmx(params: AsmxParams): Promise<{ datas: string; status: number }> {
@@ -26,11 +27,14 @@ export class NativeHttpSession {
         headers: {
           "Content-Type": "application/json; charset=utf-8",
           "Cookie": this.cookies,
-          "User-Agent": USER_AGENTS[0],
+          "User-Agent": USER_AGENTS[aleatorio(0, USER_AGENTS.length - 1)],
           "Accept": "application/json, text/javascript, */*; q=0.01",
           "X-Requested-With": "XMLHttpRequest",
           "Referer": this.pageUrl || raswebUrl,
           "Origin": base,
+          "Sec-Fetch-Site": "same-origin",
+          "Sec-Fetch-Mode": "cors",
+          "Sec-Fetch-Dest": "empty",
         },
         body: JSON.stringify({
           anomesref: params.anomesref,
@@ -44,7 +48,8 @@ export class NativeHttpSession {
       if (!res.ok) return { datas: "", status: res.status };
       const json = await res.json() as { d?: string };
       return { datas: ((json.d ?? "") as string).replace(/"/g, "").trim(), status: res.status };
-    } catch {
+    } catch (err) {
+      await log("warn", `callAsmx falhou: ${(err as Error).message}`);
       return { datas: "", status: 0 };
     }
   }
@@ -170,9 +175,13 @@ export class NativeHttpSession {
           "X-Requested-With": "XMLHttpRequest",
           "X-MicrosoftAjax": "Delta=true",
           "Cache-Control": "no-cache",
-          "User-Agent": USER_AGENTS[0],
+          "User-Agent": USER_AGENTS[aleatorio(0, USER_AGENTS.length - 1)],
           "Referer": fs2.pageUrl,
           "Origin": base,
+          "Accept": "text/javascript, */*; q=0.01",
+          "Sec-Fetch-Site": "same-origin",
+          "Sec-Fetch-Mode": "cors",
+          "Sec-Fetch-Dest": "empty",
         },
         body: body1,
         signal: AbortSignal.timeout(20000),
@@ -226,9 +235,13 @@ export class NativeHttpSession {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
           "Cookie": this.cookies,
-          "User-Agent": USER_AGENTS[0],
+          "User-Agent": USER_AGENTS[aleatorio(0, USER_AGENTS.length - 1)],
           "Referer": fs2.pageUrl,
           "Origin": base,
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Sec-Fetch-Site": "same-origin",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Dest": "document",
         },
         body: body2,
         signal: AbortSignal.timeout(25000),

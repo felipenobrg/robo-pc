@@ -38,6 +38,7 @@ export async function resolveLoginFrame(page: Page): Promise<Page | Frame> {
 
 export async function clickVirtualPassword(page: Page, frame: Page | Frame, password: string): Promise<void> {
   const chars = [...password].map(c => c.toUpperCase());
+  await log("info", `Digitando senha virtual (${chars.length} caracteres)...`);
   for (const character of chars) {
     await frame.evaluate((ch) => {
       const keys = document.querySelectorAll("#teclas a");
@@ -49,6 +50,7 @@ export async function clickVirtualPassword(page: Page, frame: Page | Frame, pass
     }, character).catch(() => undefined);
     await page.waitForTimeout(aleatorio(80, 150)).catch(() => undefined);
   }
+  await log("info", "Senha virtual digitada com sucesso.");
 }
 
 export async function loginToRasweb(page: Page, username: string, password: string): Promise<Page | Frame> {
@@ -61,7 +63,8 @@ export async function loginToRasweb(page: Page, username: string, password: stri
 
   let sessaoDuplicadaTratada = false;
   for (let i = 0; i < 600; i++) {  // 300s (600 × 500ms)
-    const pageAlive = await page.waitForTimeout(500).then(() => true).catch(() => false);
+    await page.waitForTimeout(500).catch(() => undefined);
+    const pageAlive = !page.isClosed();
 
     if (!pageAlive) {
       await log("warn", "Playwright page fechou — aguardando nova página no contexto...");
@@ -119,9 +122,9 @@ export async function loginToRasweb(page: Page, username: string, password: stri
       }
     }
 
-    if (i % 20 === 19) {
+    if (i === 0 || i % 20 === 19) {
       const urls = page.frames().map(f => f.url()).filter(Boolean).join(" | ");
-      await log("info", `Aguardando login... (${(i + 1) / 2}s) — frames: [${urls}]`);
+      await log("info", `Aguardando login... (~${Math.round((i * 500) / 1000)}s) — frames: [${urls}]`);
     }
   }
 

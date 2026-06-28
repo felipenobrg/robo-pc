@@ -191,9 +191,10 @@ export async function carregarCalendario(page: Page, session: NativeHttpSession)
       return;
     }
 
-    if (tentativa % 300 === 0) {
+    if (tentativa % 60 === 0) {
+      const decorrido = Math.round((Date.now() - inicio) / 1000);
       const intervalo = horarioAbertura ? POLLING_TURBO_MS : POLLING_ASMX_MS;
-      await log("info", `Tentativa #${tentativa} — vagas ainda fechadas. Polling nativo a cada ${intervalo}ms.`);
+      await log("info", `Polling #${tentativa} (~${decorrido}s) — vagas ainda fechadas. Intervalo: ${intervalo}ms.`);
     }
 
     const intervaloAtual = horarioAbertura ? POLLING_TURBO_MS : POLLING_ASMX_MS;
@@ -226,7 +227,10 @@ export async function carregarCalendarioPresente(page: Page, session: NativeHttp
       }).catch(() => [] as { value: string; num: number; label: string }[]);
 
       if (opts.length === 0) {
-        if (tentativa % 300 === 0) await log("info", `Tentativa #${tentativa} — dropdown ainda vazio. Polling a cada 50ms.`);
+        if (tentativa % 60 === 0) {
+        const decorrido = Math.round((Date.now() - inicio) / 1000);
+        await log("info", `Tentativa #${tentativa} (~${decorrido}s) — dropdown ainda vazio.`);
+      }
         await new Promise(r => setTimeout(r, POLLING_TURBO_MS));
         continue;
       }

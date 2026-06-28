@@ -28,6 +28,16 @@ import {
 async function runAutomation() {
   await log("info", "Automation Worker iniciado");
 
+  try {
+    const geo = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(5000) })
+      .then(r => r.json()) as Record<string, string>;
+    await log("info", `IP de origem: ${geo.ip} — ${geo.city ?? "?"}, ${geo.country_name ?? "?"}`);
+    if (!(geo.region ?? "").toLowerCase().includes("paulo") &&
+        !(geo.city  ?? "").toLowerCase().includes("paulo")) {
+      await log("warn", `IP não é de São Paulo — WAF pode bloquear`);
+    }
+  } catch { await log("warn", "Verificação de IP indisponível"); }
+
   if (!raswebUsername || !raswebPassword) {
     await log("warn", "Credenciais RASWEB não configuradas.");
     return;
@@ -84,7 +94,7 @@ async function runAutomation() {
       process.exit(0);
     });
 
-    await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+    await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => undefined);
     const frameLogin = await loginToRasweb(page, raswebUsername, raswebPassword);
     await log("info", `Login OK — frame: ${frameLogin.url()}`);
     await screenshot(page, "01-pos-login");
