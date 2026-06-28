@@ -94,7 +94,8 @@ async function runAutomation() {
     });
 
     process.once("SIGINT", async () => {
-      await log("info", "SIGINT — fazendo logout...");
+      await log("info", "SIGINT — salvando trace e fazendo logout...");
+      if (context) await context.tracing.stop({ path: "/app/trace.zip" }).catch(() => undefined);
       if (page) await logoutRasweb(page);
       await browser.close();
       process.exit(0);
