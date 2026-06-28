@@ -64,9 +64,32 @@ export async function clickVirtualPassword(page: Page, frame: Page | Frame, pass
 }
 
 export async function loginToRasweb(page: Page, username: string, password: string): Promise<Page | Frame> {
-  const loginFrame = await resolveLoginFrame(page);
+  let loginFrame = await resolveLoginFrame(page);
 
-  await loginFrame.locator("#txtusuario").waitFor({ state: "visible", timeout: 20000 });
+  // Aguarda o form de login ou detecta sessão duplicada antes de tentar preencher
+  let loginFormReady = false;
+  for (let t = 0; t < 60; t++) {  // até 30s
+    const temLogin = await loginFrame.evaluate(() => !!document.getElementById("txtusuario")).catch(() => false);
+    if (temLogin) { loginFormReady = true; break; }
+
+    const centralNow = page.frame({ name: "central" }) ?? loginFrame;
+    const texto = await centralNow.evaluate(() => document.body?.innerText ?? "").catch(() => "");
+    const tl    = texto.toLowerCase();
+    if (tl.includes("outra conex") || tl.includes("outra maquina") || tl.includes("acesso negado")) {
+      await log("warn", "Sessao duplicada na entrada — encerrando sessao anterior...");
+      await centralNow.evaluate(() => {
+        (window as unknown as { __doPostBack: (t: string, a: string) => void }).__doPostBack("entrar2", "");
+      }).catch(() => undefined);
+      await page.waitForLoadState("domcontentloaded", { timeout: 10000 }).catch(() => undefined);
+      await page.waitForTimeout(3000);
+      await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 20000 }).catch(() => undefined);
+      await page.waitForTimeout(2000);
+      loginFrame = await resolveLoginFrame(page);
+      continue;
+    }
+    await page.waitForTimeout(500).catch(() => undefined);
+  }
+  if (!loginFormReady) throw new Error("Login form (#txtusuario) nao encontrado apos 30s");
   await log("info", `Preenchendo usuário: ${username}`);
   await loginFrame.locator("#txtusuario").fill(username);
   await clickVirtualPassword(page, loginFrame, password);
