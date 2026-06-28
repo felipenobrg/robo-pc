@@ -17,3 +17,4 @@ primary_region = "gru"
   memory = "1gb"
   cpu_kind = "shared"
   cpus = 1
+  kill_timeout = "45s"
