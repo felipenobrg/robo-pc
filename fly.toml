@@ -13,6 +13,10 @@ primary_region = "gru"
   DIAGNOSTICO_MODALIDADE = "presente"
   FORCAR_EXECUCAO = "false"
 
+[[mounts]]
+  source = "trace_vol"
+  destination = "/data"
+
 [[vm]]
   memory = "1gb"
   cpu_kind = "shared"

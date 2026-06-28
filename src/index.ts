@@ -95,7 +95,7 @@ async function runAutomation() {
 
     process.once("SIGINT", async () => {
       await log("info", "SIGINT — salvando trace e fazendo logout...");
-      if (context) await context.tracing.stop({ path: "/app/trace.zip" }).catch(() => undefined);
+      if (context) await context.tracing.stop({ path: "/data/trace.zip" }).catch(() => undefined);
       if (page) await logoutRasweb(page);
       await browser.close();
       process.exit(0);
@@ -139,8 +139,8 @@ async function runAutomation() {
       await selecionarEReservarTodosOsDias(page, session);
     }
 
-    await context.tracing.stop({ path: "/app/trace.zip" });
-    await log("info", "Trace salvo em /app/trace.zip");
+    await context.tracing.stop({ path: "/data/trace.zip" });
+    await log("info", "Trace salvo em /data/trace.zip");
     await browser.close();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -157,7 +157,7 @@ async function runAutomation() {
       } catch { /* */ }
       await aguardarIntervencaoManual(page, `Erro inesperado: ${message}`);
     }
-    if (context) await context.tracing.stop({ path: "/app/trace.zip" }).catch(() => undefined);
+    if (context) await context.tracing.stop({ path: "/data/trace.zip" }).catch(() => undefined);
     await browser.close();
     process.exitCode = 1;
   }
