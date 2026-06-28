@@ -49,9 +49,11 @@ async function runAutomation() {
     await log("info", `Modalidade: ${modalidade === "presente" ? "RAS Presente" : "RAS Extensão"} (dia ${new Date().getDate()})`);
   }
 
-  const headless = process.env.PLAYWRIGHT_HEADLESS !== "false";
+  const headless      = process.env.PLAYWRIGHT_HEADLESS !== "false";
+  const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
   const browser  = await chromium.launch({
     headless,
+    ...(executablePath ? { executablePath } : {}),
     args: ["--disable-blink-features=AutomationControlled", "--no-sandbox", "--disable-infobars", "--disable-dev-shm-usage"],
   });
 
