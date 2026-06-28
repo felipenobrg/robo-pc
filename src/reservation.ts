@@ -31,7 +31,7 @@ export async function selecionarEReservarTodosOsDias(
   page: Page,
   session: NativeHttpSession | null,
   framePreAdquirido?: Page | Frame
-): Promise<void> {
+): Promise<{ reservadas: number; total: number }> {
   const frame = framePreAdquirido ?? await aguardarFrameCentral(page);
 
   const hddiasRaw = await frame.evaluate(() => {
@@ -46,7 +46,7 @@ export async function selecionarEReservarTodosOsDias(
     await screenshot(page, "sem-vagas");
     await log("warn", "hddias vazio — nenhuma vaga disponível.");
     await logoutRasweb(page);
-    return;
+    return { reservadas: 0, total: 0 };
   }
 
   const datas = hddiasRaw.split(",").map(d => {
@@ -84,12 +84,12 @@ export async function selecionarEReservarTodosOsDias(
   await log("info", `Estado final: ${textoFinal.slice(0, 300)}`);
 
   if (datasReservadas === 0) {
-    await log("warn", `Nenhuma data foi reservada pelo robô (${datas.length} tentada(s)).`);
+    await log("warn", `Nenhuma data foi reservada pelo robô (${datasUnicas.length} tentada(s)).`);
     await aguardarIntervencaoManual(page, "Nenhuma reserva confirmada — reserve manualmente no Chrome.");
-    return;
+    return { reservadas: 0, total: datasUnicas.length };
   }
 
-  await log("info", `${datasReservadas} de ${datas.length} data(s) reservada(s) com sucesso.`);
+  await log("info", `${datasReservadas} de ${datasUnicas.length} data(s) reservada(s) com sucesso.`);
 
   try {
     const clicouRelatorio = await frame.evaluate(() => {
@@ -108,4 +108,5 @@ export async function selecionarEReservarTodosOsDias(
 
   await logoutRasweb(page);
   await log("info", "Processo de reserva concluído. Sessão encerrada.");
+  return { reservadas: datasReservadas, total: datasUnicas.length };
 }

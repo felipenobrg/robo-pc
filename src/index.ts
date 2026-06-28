@@ -30,6 +30,21 @@ import {
   testarRotacaoDelegacias,
 } from "./diagnostics";
 
+async function enviarNtfyBot(ok: boolean, detalhes: string): Promise<void> {
+  const topic  = process.env.NTFY_TOPIC ?? "robo-rj-3c69973792bc";
+  const titulo = ok ? "[OK] Reserva confirmada - RASWEB" : "[ERRO] Falha na reserva - RASWEB";
+  await fetch(`https://ntfy.sh/${topic}`, {
+    method: "POST",
+    headers: {
+      "Title":    titulo,
+      "Priority": ok ? "default" : "urgent",
+      "Tags":     ok ? "white_check_mark" : "rotating_light",
+      "Content-Type": "text/plain; charset=utf-8",
+    },
+    body: Buffer.from(detalhes.slice(0, 2000), "utf-8"),
+  }).catch(() => undefined);
+}
+
 async function runAutomation() {
   await log("info", "Automation Worker iniciado");
 
@@ -102,6 +117,7 @@ async function runAutomation() {
       await log("info", "SIGINT — salvando trace e fazendo logout...");
       if (context) await context.tracing.stop({ path: "/data/trace.zip" }).catch(() => undefined);
       if (page) await logoutRasweb(page);
+      await enviarNtfyBot(false, "Bot interrompido via SIGINT antes de concluir a reserva.");
       await browser.close();
       process.exit(0);
     });
@@ -141,7 +157,9 @@ async function runAutomation() {
     } else {
       const session = new NativeHttpSession();
       await carregarCalendario(page, session);
-      await selecionarEReservarTodosOsDias(page, session);
+      const resultado = await selecionarEReservarTodosOsDias(page, session);
+      const detalhes  = `Reservadas: ${resultado.reservadas} de ${resultado.total}\nData: ${new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}`;
+      await enviarNtfyBot(resultado.reservadas > 0, detalhes);
     }
 
     await context.tracing.stop({ path: "/data/trace.zip" });
@@ -154,6 +172,7 @@ async function runAutomation() {
     if (stack) { try { fs.appendFileSync(logFilePath, stack + "\n", "utf8"); } catch { /* */ } }
     Sentry.captureException(error, { extra: { message, ip: "152.233.19.4 (GRU)" } });
     await Sentry.flush(3000).catch(() => undefined);
+    await enviarNtfyBot(false, `Excecao fatal: ${message}`);
     if (page) {
       await screenshot(page, "erro-inesperado").catch(() => undefined);
       try {

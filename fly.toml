@@ -16,6 +16,7 @@ primary_region = "gru"
   TIMEOUT_VAGAS_MS = "1800000"
   DIAGNOSTICO_MODALIDADE = "presente"
   FORCAR_EXECUCAO = "false"
+  HORARIO_ABERTURA = "08:00"
   NTFY_TOPIC = "robo-rj-3c69973792bc"
   VERIFY_DATA_DIR = "/data"
 
