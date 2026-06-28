@@ -29,12 +29,12 @@ async function runAutomation() {
   await log("info", "Automation Worker iniciado");
 
   try {
-    const geo = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(5000) })
+    const geo = await fetch("http://ip-api.com/json", { signal: AbortSignal.timeout(5000) })
       .then(r => r.json()) as Record<string, string>;
-    await log("info", `IP de origem: ${geo.ip} — ${geo.city ?? "?"}, ${geo.country_name ?? "?"}`);
-    if (!(geo.region ?? "").toLowerCase().includes("paulo") &&
-        !(geo.city  ?? "").toLowerCase().includes("paulo")) {
-      await log("warn", `IP não é de São Paulo — WAF pode bloquear`);
+    await log("info", `IP de origem: ${geo.query} — ${geo.city ?? "?"}, ${geo.country ?? "?"}`);
+    if (!(geo.regionName ?? "").toLowerCase().includes("paulo") &&
+        !(geo.city ?? "").toLowerCase().includes("paulo")) {
+      await log("warn", `IP não é de São Paulo (${geo.city ?? "?"}) — WAF pode bloquear`);
     }
   } catch { await log("warn", "Verificação de IP indisponível"); }
 
