@@ -68,7 +68,8 @@ export async function selecionarEReservarTodosOsDias(
       ? session.confirmar(data).catch(() => false)
       : Promise.resolve(false);
 
-    const playwrightPromise = reservarData(page, frame, data).catch(() => false);
+    const frameAtual = await aguardarFrameCentral(page);
+    const playwrightPromise = reservarData(page, frameAtual, data).catch(() => false);
 
     const [httpResult, playwrightResult] = await Promise.allSettled([httpPromise, playwrightPromise]);
 

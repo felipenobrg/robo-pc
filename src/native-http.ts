@@ -140,7 +140,19 @@ export class NativeHttpSession {
       pares.push({ delegacia: num, name: nameM[1], id: idM?.[1] ?? "" });
     }
 
-    if (pares.length === 0) return null;
+    if (pares.length === 0) {
+      // Fallback: popup filtrado por delegacia não tem linhas com número de DP — busca qualquer submit "Confirmar"
+      const tags = html.match(/<input[^>]+type=["']submit["'][^>]*>/gi) ?? [];
+      for (const tag of tags) {
+        const valM  = tag.match(/value=["']([^"']*)["']/i);
+        if (!valM || !valM[1].toLowerCase().includes("confirmar")) continue;
+        const nameM = tag.match(/name=["']([^"']*)["']/i);
+        const idM   = tag.match(/\bid=["']([^"']*)["']/i);
+        if (!nameM) continue;
+        return { name: nameM[1], id: idM?.[1] ?? "", delegacia: null };
+      }
+      return null;
+    }
     for (const pref of preferidas) {
       const found = pares.find(p => p.delegacia === pref);
       if (found) return found;
