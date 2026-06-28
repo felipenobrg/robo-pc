@@ -75,6 +75,13 @@ export async function loginToRasweb(page: Page, username: string, password: stri
     const centralNow = page.frame({ name: "central" }) ?? loginFrame;
     const texto = await centralNow.evaluate(() => document.body?.innerText ?? "").catch(() => "");
     const tl    = texto.toLowerCase();
+    // Log periódico para diagnóstico
+    if (t % 10 === 9) {
+      const fUrl = loginFrame.url?.() ?? "?";
+      const fTxt = await loginFrame.evaluate(() => (document.body?.innerText ?? "").slice(0, 300)).catch(() => "?");
+      await log("info", `[login-wait ${t}s] frame=${fUrl} | ${fTxt}`);
+    }
+
     if (tl.includes("outra conex") || tl.includes("outra maquina") || tl.includes("acesso negado")) {
       await log("warn", "Sessao duplicada na entrada — encerrando sessao anterior...");
       await centralNow.evaluate(() => {
@@ -89,7 +96,13 @@ export async function loginToRasweb(page: Page, username: string, password: stri
     }
     await page.waitForTimeout(500).catch(() => undefined);
   }
-  if (!loginFormReady) throw new Error("Login form (#txtusuario) nao encontrado apos 30s");
+  if (!loginFormReady) {
+    const fUrl = loginFrame.url?.() ?? "?";
+    const fTxt = await loginFrame.evaluate(() => (document.body?.innerText ?? "").slice(0, 500)).catch(() => "?");
+    const allFrames = page.frames().map(f => f.url()).filter(Boolean).join(" | ");
+    await log("error", `[login-falhou] frame=${fUrl} | frames=[${allFrames}] | content=${fTxt}`);
+    throw new Error("Login form (#txtusuario) nao encontrado apos 30s");
+  }
   await log("info", `Preenchendo usuário: ${username}`);
   await loginFrame.locator("#txtusuario").fill(username);
   await clickVirtualPassword(page, loginFrame, password);

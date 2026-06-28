@@ -125,7 +125,16 @@ async function runAutomation() {
     await log("info", "Carregando RASWEB...");
     await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => undefined);
     await log("info", "RASWEB carregado — iniciando login...");
-    const frameLogin = await loginToRasweb(page, raswebUsername, raswebPassword);
+
+    let frameLogin: import("playwright").Frame | import("playwright").Page;
+    try {
+      frameLogin = await loginToRasweb(page, raswebUsername, raswebPassword);
+    } catch (loginErr) {
+      await log("warn", `Login falhou (tentativa 1): ${(loginErr as Error).message} — aguardando 90s e tentando novamente...`);
+      await page.waitForTimeout(90000);
+      await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => undefined);
+      frameLogin = await loginToRasweb(page, raswebUsername, raswebPassword);
+    }
     await log("info", `Login OK — frame: ${frameLogin.url()}`);
     await screenshot(page, "01-pos-login");
     salvarDebug("01-pos-login", await frameLogin.evaluate(() => document.documentElement.outerHTML).catch(() => ""));
