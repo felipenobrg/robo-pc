@@ -121,10 +121,19 @@ export async function loginToRasweb(page: Page, username: string, password: stri
             (window as unknown as { __doPostBack: (t: string, a: string) => void }).__doPostBack("entrar2", "");
           }).catch(() => undefined);
           await page.waitForLoadState("domcontentloaded", { timeout: 10000 }).catch(() => undefined);
-          await page.waitForTimeout(1500);
+          await page.waitForTimeout(2000);
           await page.goto(raswebUrl, { waitUntil: "domcontentloaded", timeout: 20000 }).catch(() => undefined);
-          await page.waitForTimeout(1000);
-          await log("info", "Sessão anterior encerrada — frameset recarregado.");
+          await page.waitForTimeout(2000);
+          await log("info", "Sessão anterior encerrada — re-preenchendo credenciais...");
+          const novoFrame = page.frame({ name: "central" }) ??
+            page.frames().find(f => f.url().includes("p_login.aspx")) ?? loginFrame;
+          const temLogin = await novoFrame.evaluate(() => !!document.getElementById("txtusuario")).catch(() => false);
+          if (temLogin) {
+            await novoFrame.locator("#txtusuario").fill(username).catch(() => undefined);
+            await clickVirtualPassword(page, novoFrame, password);
+            await novoFrame.locator("#entrar").click().catch(() => undefined);
+            await log("info", "Credenciais re-submetidas após sessão duplicada.");
+          }
           continue;
         }
       }
@@ -173,7 +182,8 @@ export async function logoutRasweb(page: Page): Promise<void> {
 }
 
 export async function aguardarIntervencaoManual(page: Page, motivo: string): Promise<void> {
-  if (MODO_TESTE_COMPLETO || MODO_TESTE_RESERVA) return;
+  const headless = process.env.PLAYWRIGHT_HEADLESS !== "false";
+  if (MODO_TESTE_COMPLETO || MODO_TESTE_RESERVA || headless) return;
 
   await log("warn", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   await log("warn", `⚠ INTERVENÇÃO MANUAL NECESSÁRIA`);
