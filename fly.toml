@@ -3,6 +3,10 @@ primary_region = "gru"
 
 [build]
 
+[processes]
+  app    = "node dist/index.js"
+  verify = "node dist/verify.js"
+
 [env]
   PLAYWRIGHT_HEADLESS = "true"
   PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = "/usr/bin/chromium"
@@ -12,13 +16,17 @@ primary_region = "gru"
   TIMEOUT_VAGAS_MS = "1800000"
   DIAGNOSTICO_MODALIDADE = "presente"
   FORCAR_EXECUCAO = "false"
+  NTFY_TOPIC = "robo-rj-3c69973792bc"
+  VERIFY_DATA_DIR = "/data"
 
 [[mounts]]
   source = "trace_vol"
   destination = "/data"
+  processes = ["app", "verify"]
 
 [[vm]]
   memory = "1gb"
   cpu_kind = "shared"
   cpus = 1
   kill_timeout = "45s"
+  processes = ["app", "verify"]
