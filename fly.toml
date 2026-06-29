@@ -1,33 +1,46 @@
-app = "robo-pc"
-primary_region = "gru"
+# fly.toml app configuration file generated for robo-pc-v2 on 2026-06-29T16:58:40Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'robo-pc-v2'
+primary_region = 'ams'
 
 [build]
 
-[processes]
-  app    = "node dist/index.js"
-  verify = "node dist/verify.js"
-
 [env]
-  PLAYWRIGHT_HEADLESS = "true"
-  PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = "/usr/bin/chromium"
-  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
-  POLLING_ASMX_MS = "1000"
-  MINUTOS_ANTECIPACAO = "3"
-  TIMEOUT_VAGAS_MS = "1800000"
-  DIAGNOSTICO_MODALIDADE = "presente"
-  FORCAR_EXECUCAO = "false"
-  HORARIO_ABERTURA = "08:00"
-  NTFY_TOPIC = "robo-rj-3c69973792bc"
-  VERIFY_DATA_DIR = "/data"
+  DIAGNOSTICO_MODALIDADE = 'presente'
+  FORCAR_EXECUCAO = 'false'
+  HORARIO_ABERTURA = '08:00'
+  MINUTOS_ANTECIPACAO = '3'
+  NTFY_TOPIC = 'robo-rj-3c69973792bc'
+  PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = '/usr/bin/chromium'
+  PLAYWRIGHT_HEADLESS = 'true'
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1'
+  POLLING_ASMX_MS = '1000'
+  TIMEOUT_VAGAS_MS = '1800000'
+  VERIFY_DATA_DIR = '/data'
+
+[processes]
+  app = 'node dist/index.js'
+  verify = 'node dist/verify.js'
 
 [[mounts]]
-  source = "trace_vol"
-  destination = "/data"
-  processes = ["app", "verify"]
+  source = 'trace_vol'
+  destination = '/data'
+  processes = ['app', 'verify']
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
 [[vm]]
-  memory = "1gb"
-  cpu_kind = "shared"
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
-  kill_timeout = "45s"
-  processes = ["app", "verify"]
+  memory_mb = 256
+  processes = ['app', 'verify']
